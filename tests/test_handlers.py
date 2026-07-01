@@ -115,6 +115,182 @@ def test_handle_message_mention_only_skipped():
         mock_ask.assert_not_called()
 
 
+# ── /start ──────────────────────────────────────────────────────────────────
+
+
+def test_cmd_start_sends_greeting():
+    with patch("bot.handlers.bot") as mock_bot:
+        from bot.handlers import cmd_start
+
+        cmd_start(make_message(text="/start"))
+        mock_bot.send_message.assert_called_once()
+        chat_id, text = mock_bot.send_message.call_args[0]
+        assert chat_id == 456
+        assert "Rooky" in text
+
+
+# ── /help ─────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_help_lists_commands():
+    """Without HF, /help lists the base commands and omits /model."""
+    with (
+        patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.HF_SPACE_ID", ""),
+    ):
+        from bot.handlers import cmd_help
+
+        cmd_help(make_message(text="/help"))
+        sent = mock_bot.send_message.call_args[0][1]
+        assert "/start" in sent
+        assert "/reset" in sent
+        assert "/roast" in sent
+        assert "/model" not in sent
+
+
+def test_cmd_help_includes_model_when_hf_enabled():
+    """When HF_SPACE_ID is set, /help advertises the /model command."""
+    with (
+        patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.HF_SPACE_ID", "fake/space"),
+    ):
+        from bot.handlers import cmd_help
+
+        cmd_help(make_message(text="/help"))
+        sent = mock_bot.send_message.call_args[0][1]
+        assert "/model" in sent
+
+
+# ── /reset ────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_reset_clears_history():
+    with (
+        patch("bot.handlers.clear_history") as mock_clear,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_reset
+
+        cmd_reset(make_message(text="/reset"))
+        mock_clear.assert_called_once_with(123)  # make_message default user_id
+        assert "cleared" in mock_bot.send_message.call_args[0][1].lower()
+
+
+# ── /joke ─────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_joke_asks_ai_and_replies():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Why did the dev...") as mock_ask,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_joke
+
+        cmd_joke(make_message(text="/joke"))
+        mock_ask.assert_called_once()
+        assert mock_ask.call_args[0][0] == 123  # user_id
+        assert mock_bot.send_message.call_args[0][1] == "Why did the dev..."
+
+
+# ── /quote, /fact, /compliment (keep_typing + send_reply pattern) ───────────────
+
+
+def test_cmd_quote_uses_keep_typing_and_send_reply():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Keep learning.") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_quote
+
+        msg = make_message(text="/quote")
+        cmd_quote(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        mock_ask.assert_called_once()
+        mock_send.assert_called_once_with(msg, "Keep learning.")
+
+
+def test_cmd_fact_uses_keep_typing_and_send_reply():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Octopuses have three hearts."),
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_fact
+
+        msg = make_message(text="/fact")
+        cmd_fact(msg)
+        mock_keep.assert_called_once_with(456)
+        mock_send.assert_called_once_with(msg, "Octopuses have three hearts.")
+
+
+def test_cmd_compliment_uses_keep_typing_and_send_reply():
+    with (
+        patch("bot.handlers.ask_ai", return_value="You're doing great!"),
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_compliment
+
+        msg = make_message(text="/compliment")
+        cmd_compliment(msg)
+        mock_keep.assert_called_once_with(456)
+        mock_send.assert_called_once_with(msg, "You're doing great!")
+
+
+# ── /roll ─────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_roll_reports_dice_value():
+    """The roll is 1-6 and echoed in the reply. Patch randint for determinism."""
+    with (
+        patch("bot.handlers.random.randint", return_value=4) as mock_rand,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_roll
+
+        cmd_roll(make_message(text="/roll"))
+        mock_rand.assert_called_once_with(1, 6)
+        assert "4" in mock_bot.send_message.call_args[0][1]
+
+
+# ── /roast ────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_roast_uses_target_name_from_text():
+    """'/roast Sam' should feed the name into the AI prompt."""
+    with (
+        patch("bot.handlers.ask_ai", return_value="Sam, bless your heart...") as mock_ask,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_roast
+
+        cmd_roast(make_message(text="/roast Sam"))
+        assert "Sam" in mock_ask.call_args[0][1]
+        assert mock_bot.send_message.call_args[0][1] == "Sam, bless your heart..."
+
+
+def test_cmd_roast_defaults_to_you_without_arg():
+    """'/roast' with no target roasts 'you'."""
+    with (
+        patch("bot.handlers.ask_ai", return_value="ok") as mock_ask,
+        patch("bot.handlers.bot"),
+    ):
+        from bot.handlers import cmd_roast
+
+        cmd_roast(make_message(text="/roast"))
+        assert "you" in mock_ask.call_args[0][1]
+
+
 # ── /about ────────────────────────────────────────────────────────────────────
 
 
@@ -122,6 +298,7 @@ def test_cmd_about_with_sqlite():
     """When SQLite is configured, /about should reference SQLite."""
     with (
         patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.ask_ai", return_value="A curious raccoon."),
         patch("bot.handlers.store", MagicMock()),
         patch("bot.handlers.HF_SPACE_ID", ""),
     ):
@@ -139,6 +316,7 @@ def test_cmd_about_includes_commit_sha_when_set():
     live."""
     with (
         patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.ask_ai", return_value="A curious raccoon."),
         patch("bot.handlers.store", MagicMock()),
         patch("bot.handlers.HF_SPACE_ID", ""),
         patch("bot.handlers.COMMIT_SHA", "abc1234"),
@@ -155,6 +333,7 @@ def test_cmd_about_omits_version_line_when_sha_unknown():
     entirely rather than showing 'unknown' — clearer for the user."""
     with (
         patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.ask_ai", return_value="A curious raccoon."),
         patch("bot.handlers.store", MagicMock()),
         patch("bot.handlers.HF_SPACE_ID", ""),
         patch("bot.handlers.COMMIT_SHA", ""),
@@ -172,6 +351,7 @@ def test_cmd_about_without_store():
     bot.handlers' imports."""
     with (
         patch("bot.handlers.bot") as mock_bot,
+        patch("bot.handlers.ask_ai", return_value="A curious raccoon."),
         patch("bot.handlers.store", None),
         patch("bot.handlers.HF_SPACE_ID", ""),
     ):
