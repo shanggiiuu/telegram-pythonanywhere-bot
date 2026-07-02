@@ -147,6 +147,27 @@ function Install-Scoop {
     return (Test-RealCommand 'scoop')
 }
 
+function Get-Pwsh {
+    # Return a path to PowerShell 7 (pwsh), installing it via scoop if missing.
+    # deploy-pa's pa_deploy.ps1 uses Invoke-WebRequest -Form / -SkipHttpErrorCheck
+    # / -StatusCodeVariable, none of which exist in Windows PowerShell 5.1, so on
+    # 5.1 we must hand the script off to a real pwsh. Returns $null if pwsh is
+    # absent and could not be bootstrapped.
+    $c = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($c) { return $c.Source }
+    Write-Host "PowerShell 7 (pwsh) not found - deploy-pa needs it." -ForegroundColor Cyan
+    Write-Host "  Installing it via scoop (per-user, no admin)..." -ForegroundColor Cyan
+    if (-not (Install-Scoop)) {
+        Write-Host "  Could not bootstrap scoop to install pwsh." -ForegroundColor Yellow
+        return $null
+    }
+    Invoke-Scoop @('install', 'pwsh')
+    Update-SessionPath
+    $c = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($c) { return $c.Source }
+    return $null
+}
+
 function Install-Toolchain {
     # Best-effort: make sure git, gh and python are on PATH before building
     # the venv, installing any that are missing via scoop. Only bootstraps
@@ -203,12 +224,23 @@ switch ($Target.ToLower()) {
     'deploy-pa' {
         Assert-Env
         $deploy = Join-Path $RepoRoot 'scripts\pa_deploy.ps1'
-        # pa_deploy.ps1 needs PowerShell 7. If we're on 5.1 but pwsh exists, use it.
-        if ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command pwsh -ErrorAction SilentlyContinue)) {
-            Invoke-Native { & pwsh -NoProfile -File $deploy }
-        } else {
-            # In-process .ps1 call: its own `exit <code>` propagates the failure.
+        # pa_deploy.ps1 requires PowerShell 7 (it uses Invoke-WebRequest -Form /
+        # -SkipHttpErrorCheck / -StatusCodeVariable, none of which exist in 5.1).
+        if ($PSVersionTable.PSVersion.Major -ge 7) {
+            # Already on PS7 — run in-process; its own `exit <code>` propagates.
             & $deploy
+        } else {
+            # On Windows PowerShell 5.1: hand off to pwsh (installing it if needed)
+            # rather than crashing with a cryptic #requires version error.
+            $pwsh = Get-Pwsh
+            if (-not $pwsh) {
+                Write-Host "ERROR: deploy-pa needs PowerShell 7, which isn't installed and couldn't be auto-installed." -ForegroundColor Red
+                Write-Host "  Install it manually, then re-run:" -ForegroundColor Yellow
+                Write-Host "    winget install --id Microsoft.PowerShell    (or)    scoop install pwsh" -ForegroundColor Yellow
+                Write-Host "  Then open a NEW terminal and run '.\make.ps1 deploy-pa' again." -ForegroundColor Yellow
+                exit 1
+            }
+            Invoke-Native { & $pwsh -NoProfile -File $deploy }
         }
     }
     'claude' {

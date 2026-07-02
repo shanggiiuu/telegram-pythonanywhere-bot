@@ -134,13 +134,35 @@ function Invoke-Pa {
     if (-not $NoAuth) { $headers['Authorization'] = "Token $PaToken" }
     $p = @{
         Uri = $uri; Method = $Method; Headers = $headers; TimeoutSec = $TimeoutSec
-        SkipHttpErrorCheck = $true; StatusCodeVariable = 'code'
+        SkipHttpErrorCheck = $true
     }
-    if ($Form)              { $p.Form = $Body }
-    elseif ($null -ne $Body) { $p.Body = $Body }
+    if ($Form) {
+        $p.Form = $Body
+    } elseif ($null -ne $Body) {
+        # Encode hashtable bodies to form-urlencoded ourselves and set an
+        # explicit Content-Type, matching `curl --data-urlencode` in the .sh
+        # port. Invoke-WebRequest's implicit hashtable encoding sends NO
+        # Content-Type on PATCH under the older Microsoft.PowerShell.Utility a
+        # portable/scoop pwsh can load, and PA rejects that with HTTP 415.
+        if ($Body -is [System.Collections.IDictionary]) {
+            $pairs = foreach ($k in $Body.Keys) {
+                '{0}={1}' -f [uri]::EscapeDataString([string]$k), [uri]::EscapeDataString([string]$Body[$k])
+            }
+            $p.Body = ($pairs -join '&')
+            $p.ContentType = 'application/x-www-form-urlencoded'
+        } else {
+            $p.Body = $Body
+        }
+    }
     try {
+        # Read the status off the response object rather than via
+        # -StatusCodeVariable: that parameter only exists in PowerShell 7.4+,
+        # and a scoop/portable pwsh launched from Windows PowerShell can inherit
+        # PSModulePath and load an older Microsoft.PowerShell.Utility (e.g.
+        # 7.0.0.0) that lacks it, which would make every PA call throw. The
+        # .StatusCode property works on every PS 7.x with -SkipHttpErrorCheck.
         $resp = Invoke-WebRequest @p
-        return [pscustomobject]@{ Code = [int]$code; Body = [string]$resp.Content }
+        return [pscustomobject]@{ Code = [int]$resp.StatusCode; Body = [string]$resp.Content }
     } catch {
         # Network-level failure (DNS, TLS, timeout) — no HTTP status.
         return [pscustomobject]@{ Code = 0; Body = [string]$_.Exception.Message }
