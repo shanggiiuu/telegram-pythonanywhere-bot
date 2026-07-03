@@ -62,7 +62,7 @@ def cmd_help(message):
         "/reset — wipes our convo history, fresh start, clean slate, magic✨ ",
         "/about — peek under my hood (which AI model, storage, hosting, version) ;3",
         "/sha — which lil version of me is alive rn (git commit) 🤓",
-        "/explain — paste code or a word, I break it down like ur 5 🧠",
+        "/explain — paste code or a word, I break it down like ur 5 🤏",
         "/joke  — I tell you a unhinged funny joke👍 ",
         "/quote — something to cheer mah pookie up!!>:3",
         "/fact — random fun fact that will be stuck in your head",
