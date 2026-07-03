@@ -68,7 +68,7 @@ def cmd_help(message):
         "/fact — random fun fact that will be stuck in your head",
         "/compliment — slay the day diva💅",
         "/recipe — whatcha cookin today chef? I gotchu 🍳",
-        "/knowledge — random smart nugget to flex ur brain 🧠 (or /knowledge <topic>)",
+        "/knowledge — random smart nugget to flex ur brain 🧠",
         "/devfact — spicy lil programming fun fact 👩‍💻🔥",
         "/finance — future-you money tips 💰 (or ask me a money Q)",
         "/uni — uni planning help, we plottin ur glowup 🎓 (or ask me a Q)",
