@@ -449,6 +449,10 @@ make deploy-pa  # one-command PythonAnywhere deploy (see "Fast path" in Part 2)
 | `/reset` | Clear your conversation history |
 | `/about` | Show model, storage, and hosting info |
 | `/sha` | Show the live git commit SHA |
+| `/knowledge` | Share a piece of general knowledge (or explain a topic you name) |
+| `/devfact` | A fun programming / computer-science fact |
+| `/finance` | Practical money tips for your future (or ask a money question) |
+| `/uni` | University-planning help (or ask a uni question) |
 | `/model` | Switch AI provider (only available when `HF_SPACE_ID` is set) |
 
 ---

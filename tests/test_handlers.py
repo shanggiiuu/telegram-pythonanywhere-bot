@@ -147,6 +147,10 @@ def test_cmd_help_lists_commands():
         assert "/roast" in sent
         assert "/recipe" in sent
         assert "/explain" in sent
+        assert "/knowledge" in sent
+        assert "/devfact" in sent
+        assert "/finance" in sent
+        assert "/uni" in sent
         assert "/model" not in sent
 
 
@@ -307,6 +311,158 @@ def test_cmd_explain_without_topic_shows_usage_hint():
         cmd_explain(make_message(text="/explain"))
         mock_ask.assert_not_called()
         assert "/explain" in mock_bot.send_message.call_args[0][1]
+
+
+# ── /knowledge, /devfact, /finance, /uni (optional-arg + random-topic) ──────────
+
+
+def test_cmd_knowledge_with_topic_threads_topic_into_prompt():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Black holes are wild!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_knowledge
+
+        msg = make_message(text="/knowledge black holes")
+        cmd_knowledge(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        assert mock_ask.call_args[0][0] == 123  # user_id
+        assert "black holes" in mock_ask.call_args[0][1]  # topic threaded in
+        mock_send.assert_called_once_with(msg, "Black holes are wild!")
+
+
+def test_cmd_knowledge_without_topic_uses_random_domain():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Did you know...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="science"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_knowledge
+
+        cmd_knowledge(make_message(text="/knowledge"))
+        mock_ask.assert_called_once()  # no-arg still calls the AI
+        assert "science" in mock_ask.call_args[0][1]  # random domain used
+        mock_send.assert_called_once()
+
+
+def test_cmd_devfact_with_topic_threads_topic_into_prompt():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Python fact!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_devfact
+
+        msg = make_message(text="/devfact python")
+        cmd_devfact(msg)
+        mock_keep.assert_called_once_with(456)
+        assert "python" in mock_ask.call_args[0][1]
+        mock_send.assert_called_once_with(msg, "Python fact!")
+
+
+def test_cmd_devfact_without_topic_uses_random_subtopic():
+    with (
+        patch("bot.handlers.ask_ai", return_value="A fun bug...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="cybersecurity"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_devfact
+
+        cmd_devfact(make_message(text="/devfact"))
+        mock_ask.assert_called_once()
+        assert "cybersecurity" in mock_ask.call_args[0][1]
+        mock_send.assert_called_once()
+
+
+def test_cmd_finance_with_question_includes_topic_and_disclaimer():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Save 10%...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_finance
+
+        msg = make_message(text="/finance how do I save")
+        cmd_finance(msg)
+        mock_keep.assert_called_once_with(456)
+        prompt = mock_ask.call_args[0][1]
+        assert "how do I save" in prompt  # question threaded in
+        assert "not professional financial advice" in prompt  # safety framing
+        mock_send.assert_called_once_with(msg, "Save 10%...")
+
+
+def test_cmd_finance_without_question_uses_random_topic_and_disclaimer():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Budget tip...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="saving money"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_finance
+
+        cmd_finance(make_message(text="/finance"))
+        mock_ask.assert_called_once()
+        prompt = mock_ask.call_args[0][1]
+        assert "saving money" in prompt  # random topic used
+        assert "not professional financial advice" in prompt
+        mock_send.assert_called_once()
+
+
+def test_cmd_uni_with_question_threads_topic_into_prompt():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Pick what you love!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_uni
+
+        msg = make_message(text="/uni how do I pick a major")
+        cmd_uni(msg)
+        mock_keep.assert_called_once_with(456)
+        assert "how do I pick a major" in mock_ask.call_args[0][1]
+        mock_send.assert_called_once_with(msg, "Pick what you love!")
+
+
+def test_cmd_uni_without_question_uses_random_topic():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Study tip...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="choosing a major"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_uni
+
+        cmd_uni(make_message(text="/uni"))
+        mock_ask.assert_called_once()
+        assert "choosing a major" in mock_ask.call_args[0][1]
+        mock_send.assert_called_once()
 
 
 # ── /roll ─────────────────────────────────────────────────────────────────────

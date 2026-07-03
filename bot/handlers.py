@@ -68,6 +68,10 @@ def cmd_help(message):
         "/fact — random fun fact that will be stuck in your head",
         "/compliment — slay the day diva💅",
         "/recipe — whatcha cookin today chef? I gotchu 🍳",
+        "/knowledge — random smart nugget to flex ur brain 🧠 (or /knowledge <topic>)",
+        "/devfact — spicy lil programming fun fact 👩‍💻🔥",
+        "/finance — future-you money tips 💰 (or ask me a money Q)",
+        "/uni — uni planning help, we plottin ur glowup 🎓 (or ask me a Q)",
         "/roll — ROLL THE DICE! 🎲",
         "/roast — imma cook :p",
         "/remember — got it inside the walnut😎",
@@ -174,6 +178,150 @@ def cmd_recipe(message):
         "short list of common ingredients, and 3-6 easy numbered steps. Keep "
         "it beginner-friendly and quick to cook."
     )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
+
+
+@bot.message_handler(commands=["knowledge"], func=is_allowed)
+def cmd_knowledge(message):
+    # Optional topic (like /explain); no topic rotates a random domain (like
+    # /recipe) so repeat calls keep serving fresh nuggets.
+    parts = (message.text or "").split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if topic:
+        prompt = (
+            "Share some interesting, true general knowledge about this topic "
+            "in a few clear, beginner-friendly sentences: " + topic
+        )
+    else:
+        domain = random.choice(
+            [
+                "science",
+                "world history",
+                "space and astronomy",
+                "nature and animals",
+                "geography",
+                "the human body",
+                "art and culture",
+                "mathematics",
+                "how everyday things work",
+            ]
+        )
+        prompt = (
+            f"Teach me one interesting, true piece of general knowledge about "
+            f"{domain}. Explain it in a few clear, beginner-friendly sentences "
+            "with a touch of wonder."
+        )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
+
+
+@bot.message_handler(commands=["devfact"], func=is_allowed)
+def cmd_devfact(message):
+    # The programming twin of /fact. Optional topic; otherwise rotate a random
+    # corner of computing so calls stay varied.
+    parts = (message.text or "").split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if topic:
+        prompt = (
+            "Tell me one fun, true programming or computer-science fact about "
+            "this. Keep it short, surprising, and beginner-friendly: " + topic
+        )
+    else:
+        subtopic = random.choice(
+            [
+                "the history of computing",
+                "programming languages",
+                "a famous software bug or glitch",
+                "algorithms and data structures",
+                "the internet and networking",
+                "computer hardware",
+                "open source software",
+                "artificial intelligence",
+                "cybersecurity",
+                "a famous programmer or computer scientist",
+            ]
+        )
+        prompt = (
+            f"Tell me one fun, true fact about {subtopic}. Keep it short, "
+            "surprising, and beginner-friendly."
+        )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
+
+
+@bot.message_handler(commands=["finance"], func=is_allowed)
+def cmd_finance(message):
+    # Optional money question; otherwise rotate a practical topic. Written to be
+    # useful for anyone (teen or adult) and framed as friendly tips, not
+    # professional financial advice.
+    parts = (message.text or "").split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if topic:
+        prompt = (
+            "Answer this personal-finance question in a short, practical, "
+            "beginner-friendly way that works for anyone, teen or adult. End "
+            "with a tiny reminder that this is friendly guidance, not "
+            "professional financial advice: " + topic
+        )
+    else:
+        money_topic = random.choice(
+            [
+                "saving money",
+                "making a simple budget",
+                "needs vs wants",
+                "compound interest",
+                "building an emergency fund",
+                "avoiding debt",
+                "your first paycheck",
+                "smart spending",
+                "setting money goals",
+            ]
+        )
+        prompt = (
+            f"Give me one practical, beginner-friendly personal-finance tip "
+            f"about {money_topic} to help me with my future money. Keep it "
+            "short and encouraging. End with a tiny reminder that this is "
+            "friendly guidance, not professional financial advice."
+        )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
+
+
+@bot.message_handler(commands=["uni"], func=is_allowed)
+def cmd_uni(message):
+    # Optional university question; otherwise rotate a planning topic. Kept
+    # general and encouraging for any student.
+    parts = (message.text or "").split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if topic:
+        prompt = (
+            "Answer this university-planning question in a short, practical, "
+            "encouraging way for a student: " + topic
+        )
+    else:
+        uni_topic = random.choice(
+            [
+                "choosing a major",
+                "the application timeline",
+                "writing a personal statement or essay",
+                "finding scholarships and funding",
+                "good study habits",
+                "how to choose a university",
+                "balancing passion with job prospects",
+                "preparing for entrance exams",
+                "student life and staying organized",
+            ]
+        )
+        prompt = (
+            f"Give me one helpful, practical tip about {uni_topic} to help me "
+            "plan for university. Keep it short, encouraging, and useful for "
+            "any student."
+        )
     with keep_typing(message.chat.id):
         reply = ask_ai(message.from_user.id, prompt)
     send_reply(message, reply)
