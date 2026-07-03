@@ -61,6 +61,7 @@ def cmd_help(message):
         "/help  — shows this lil menu of commands:D",
         "/reset — wipes our convo history, fresh start, clean slate, magic✨ ",
         "/about — peek under my hood (which AI model, storage, hosting, version) ;3",
+        "/sha — which lil version of me is alive rn (git commit) 🤓",
         "/joke  — I tell you a unhinged funny joke👍 ",
         "/quote — something to cheer mah pookie up!!>:3",
         "/fact — random fun fact that will be stuck in your head",
@@ -69,9 +70,7 @@ def cmd_help(message):
         "/roast — imma cook :p",
         "/remember — got it inside the walnut😎",
         "/recall — I dig it back outta the walnut:3",
-        "/forget — it ran away from my brain"
-
-
+        "/forget — it ran away from my brain",
     ]
     if HF_SPACE_ID:
         lines.append("/model — switch AI provider")
@@ -179,6 +178,12 @@ def cmd_forget(message):
         bot.send_message(message.chat.id, "Poof! the brain ran :/")
     else:
         bot.send_message(message.chat.id, "There's nothing saved to forget! >:D")
+
+
+@bot.message_handler(commands=["sha"], func=is_allowed)
+def cmd_sha(message):
+    sha = COMMIT_SHA or "unknown"
+    bot.send_message(message.chat.id, f"Live SHA: {sha}")
 
 
 if HF_SPACE_ID:
