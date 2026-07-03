@@ -151,6 +151,8 @@ def test_cmd_help_lists_commands():
         assert "/devfact" in sent
         assert "/finance" in sent
         assert "/uni" in sent
+        assert "/debug" in sent
+        assert "/fact" not in sent  # merged into /knowledge
         assert "/model" not in sent
 
 
@@ -198,7 +200,7 @@ def test_cmd_joke_asks_ai_and_replies():
         assert mock_bot.send_message.call_args[0][1] == "Why did the dev..."
 
 
-# ── /quote, /fact, /compliment (keep_typing + send_reply pattern) ───────────────
+# ── /quote, /compliment (keep_typing + send_reply pattern) ──────────────────────
 
 
 def test_cmd_quote_uses_keep_typing_and_send_reply():
@@ -217,23 +219,6 @@ def test_cmd_quote_uses_keep_typing_and_send_reply():
         mock_keep.assert_called_once_with(456)  # chat_id
         mock_ask.assert_called_once()
         mock_send.assert_called_once_with(msg, "Keep learning.")
-
-
-def test_cmd_fact_uses_keep_typing_and_send_reply():
-    with (
-        patch("bot.handlers.ask_ai", return_value="Octopuses have three hearts."),
-        patch("bot.handlers.send_reply") as mock_send,
-        patch("bot.handlers.keep_typing") as mock_keep,
-        patch("bot.handlers.bot"),
-    ):
-        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
-        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
-        from bot.handlers import cmd_fact
-
-        msg = make_message(text="/fact")
-        cmd_fact(msg)
-        mock_keep.assert_called_once_with(456)
-        mock_send.assert_called_once_with(msg, "Octopuses have three hearts.")
 
 
 def test_cmd_compliment_uses_keep_typing_and_send_reply():
@@ -311,6 +296,44 @@ def test_cmd_explain_without_topic_shows_usage_hint():
         cmd_explain(make_message(text="/explain"))
         mock_ask.assert_not_called()
         assert "/explain" in mock_bot.send_message.call_args[0][1]
+
+
+# ── /debug ────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_debug_with_code_threads_snippet_into_prompt():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Missing a colon!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_debug
+
+        msg = make_message(text="/debug def f() return 1")
+        cmd_debug(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        mock_ask.assert_called_once()
+        assert mock_ask.call_args[0][0] == 123  # user_id
+        prompt = mock_ask.call_args[0][1]
+        assert "def f() return 1" in prompt  # pasted code threaded in
+        assert "debug" in prompt.lower()  # framed as a debugging task
+        mock_send.assert_called_once_with(msg, "Missing a colon!")
+
+
+def test_cmd_debug_without_code_shows_usage_hint():
+    """Bare '/debug' must NOT call the AI (nothing to debug); shows a hint."""
+    with (
+        patch("bot.handlers.ask_ai") as mock_ask,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_debug
+
+        cmd_debug(make_message(text="/debug"))
+        mock_ask.assert_not_called()
+        assert "/debug" in mock_bot.send_message.call_args[0][1]
 
 
 # ── /knowledge, /devfact, /finance, /uni (optional-arg + random-topic) ──────────

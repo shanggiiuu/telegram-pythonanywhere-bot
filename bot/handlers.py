@@ -63,9 +63,9 @@ def cmd_help(message):
         "/about — peek under my hood (which AI model, storage, hosting, version) ;3",
         "/sha — which lil version of me is alive rn (git commit) 🤓",
         "/explain — paste code or a word, I break it down like ur 5 🤏",
+        "/debug — paste ur broken code + error, I sniff out the bug 🐛",
         "/joke  — I tell you a unhinged funny joke👍 ",
         "/quote — something to cheer mah pookie up!!>:3",
-        "/fact — random fun fact that will be stuck in your head",
         "/compliment — slay the day diva💅",
         "/recipe — whatcha cookin today chef? I gotchu 🍳",
         "/knowledge — random smart nugget to flex ur brain 🧠",
@@ -119,12 +119,6 @@ def cmd_quote(message):
         reply = ask_ai(message.from_user.id, "Share one short, inspiring quote about learning or coding.")
     send_reply(message, reply)
 
-@bot.message_handler(commands=["fact"], func=is_allowed)
-def cmd_fact(message):
-      with keep_typing(message.chat.id):
-          reply = ask_ai(message.from_user.id, "Hit me with ONE quick, surprising fact — just a punchy sentence or two. Anything goes. No deep explanation, just the wow.")
-      send_reply(message, reply)
-
 
 @bot.message_handler(commands=["compliment"], func=is_allowed)
 def cmd_compliment(message):
@@ -150,6 +144,30 @@ def cmd_explain(message):
         "Explain this like I'm 5 years old: super simple words, one fun "
         "everyday analogy, and keep it short. If it's code, say what it does "
         f"and walk through it step by step:\n\n{topic}"
+    )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
+
+
+@bot.message_handler(commands=["debug"], func=is_allowed)
+def cmd_debug(message):
+    # Split on any whitespace (maxsplit=1) so pasted code with newlines still
+    # counts as the input — users paste a code block and/or an error message.
+    parts = (message.text or "").split(maxsplit=1)
+    snippet = parts[1].strip() if len(parts) > 1 else ""
+    if not snippet:
+        bot.send_message(
+            message.chat.id,
+            "Paste the code thats actin sus (and the error if ya got one) and "
+            "I'll sniff out the bug 🐛 — like: /debug <your code>",
+        )
+        return
+    prompt = (
+        "Help me debug this. Find the most likely bug(s), explain in simple "
+        "terms what's going wrong and why, then show the corrected code. If "
+        "there's an error message, use it as a clue. Keep it beginner-friendly:"
+        f"\n\n{snippet}"
     )
     with keep_typing(message.chat.id):
         reply = ask_ai(message.from_user.id, prompt)
