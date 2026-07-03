@@ -332,6 +332,7 @@ def test_cmd_knowledge_with_topic_threads_topic_into_prompt():
         mock_keep.assert_called_once_with(456)  # chat_id
         assert mock_ask.call_args[0][0] == 123  # user_id
         assert "black holes" in mock_ask.call_args[0][1]  # topic threaded in
+        assert "mini-lesson" in mock_ask.call_args[0][1]  # explainer, not a one-liner
         mock_send.assert_called_once_with(msg, "Black holes are wild!")
 
 
@@ -350,6 +351,7 @@ def test_cmd_knowledge_without_topic_uses_random_domain():
         cmd_knowledge(make_message(text="/knowledge"))
         mock_ask.assert_called_once()  # no-arg still calls the AI
         assert "science" in mock_ask.call_args[0][1]  # random domain used
+        assert "mini-lesson" in mock_ask.call_args[0][1]  # a lesson, not /fact-style trivia
         mock_send.assert_called_once()
 
 

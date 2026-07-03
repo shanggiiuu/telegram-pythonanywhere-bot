@@ -122,7 +122,7 @@ def cmd_quote(message):
 @bot.message_handler(commands=["fact"], func=is_allowed)
 def cmd_fact(message):
       with keep_typing(message.chat.id):
-          reply = ask_ai(message.from_user.id, "Surprise me with one fascinating, little-known fact. Anything goes!")
+          reply = ask_ai(message.from_user.id, "Hit me with ONE quick, surprising fact — just a punchy sentence or two. Anything goes. No deep explanation, just the wow.")
       send_reply(message, reply)
 
 
@@ -185,14 +185,17 @@ def cmd_recipe(message):
 
 @bot.message_handler(commands=["knowledge"], func=is_allowed)
 def cmd_knowledge(message):
-    # Optional topic (like /explain); no topic rotates a random domain (like
-    # /recipe) so repeat calls keep serving fresh nuggets.
+    # A "learn something" mini-lesson — distinct from /fact's quick trivia.
+    # With a topic it teaches that subject (the how/why); with none it rotates
+    # a random domain and teaches a concept, not a one-line fact.
     parts = (message.text or "").split(maxsplit=1)
     topic = parts[1].strip() if len(parts) > 1 else ""
     if topic:
         prompt = (
-            "Share some interesting, true general knowledge about this topic "
-            "in a few clear, beginner-friendly sentences: " + topic
+            "Teach me about this topic like a friendly mini-lesson: explain "
+            "what it is and how or why it works, in a few clear, "
+            "beginner-friendly sentences. Go deeper than a one-line fact: "
+            + topic
         )
     else:
         domain = random.choice(
@@ -209,9 +212,10 @@ def cmd_knowledge(message):
             ]
         )
         prompt = (
-            f"Teach me one interesting, true piece of general knowledge about "
-            f"{domain}. Explain it in a few clear, beginner-friendly sentences "
-            "with a touch of wonder."
+            f"Teach me one interesting concept from {domain} as a short "
+            "mini-lesson. Don't just state a fact — briefly explain how or why "
+            "it works, in a few clear, beginner-friendly sentences with a "
+            "touch of wonder."
         )
     with keep_typing(message.chat.id):
         reply = ask_ai(message.from_user.id, prompt)
