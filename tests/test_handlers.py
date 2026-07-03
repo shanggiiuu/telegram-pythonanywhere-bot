@@ -152,6 +152,7 @@ def test_cmd_help_lists_commands():
         assert "/finance" in sent
         assert "/uni" in sent
         assert "/debug" in sent
+        assert "/raccoonfacts" in sent
         assert "/fact" not in sent  # merged into /knowledge
         assert "/model" not in sent
 
@@ -236,6 +237,45 @@ def test_cmd_compliment_uses_keep_typing_and_send_reply():
         cmd_compliment(msg)
         mock_keep.assert_called_once_with(456)
         mock_send.assert_called_once_with(msg, "You're doing great!")
+
+
+# ── /raccoonfacts ─────────────────────────────────────────────────────────────
+
+
+def test_cmd_raccoonfacts_real_branch_asks_for_true_raccoon_fact():
+    with (
+        patch("bot.handlers.ask_ai", return_value="Raccoons wash their food!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="real"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_raccoonfacts
+
+        msg = make_message(text="/raccoonfacts")
+        cmd_raccoonfacts(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        assert "real raccoons" in mock_ask.call_args[0][1]  # true-fact branch
+        mock_send.assert_called_once_with(msg, "Raccoons wash their food!")
+
+
+def test_cmd_raccoonfacts_rooky_branch_asks_for_in_character_fact():
+    with (
+        patch("bot.handlers.ask_ai", return_value="I once heist-ed a cookie jar!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.random.choice", return_value="rooky"),
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_raccoonfacts
+
+        cmd_raccoonfacts(make_message(text="/raccoonfacts"))
+        assert "Rooky the Raccoon" in mock_ask.call_args[0][1]  # in-character branch
+        mock_send.assert_called_once()
 
 
 def test_cmd_recipe_uses_keep_typing_and_send_reply():

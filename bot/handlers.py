@@ -67,6 +67,7 @@ def cmd_help(message):
         "/joke  — I tell you a unhinged funny joke👍 ",
         "/quote — something to cheer mah pookie up!!>:3",
         "/compliment — slay the day diva💅",
+        "/raccoonfacts — fun facts bout raccoons n lil secrets bout me 🦝",
         "/recipe — whatcha cookin today chef? I gotchu 🍳",
         "/knowledge — random smart nugget to flex ur brain 🧠",
         "/devfact — spicy lil programming fun fact 👩‍💻🔥",
@@ -125,6 +126,27 @@ def cmd_compliment(message):
       with keep_typing(message.chat.id):
           reply = ask_ai(message.from_user.id, "Give me a warm, wholesome, encouraging compliment to brighten my day.")
       send_reply(message, reply)
+
+
+@bot.message_handler(commands=["raccoonfacts"], func=is_allowed)
+def cmd_raccoonfacts(message):
+    # Coin-flip: a true fact about real raccoons, or a playful in-character
+    # "fact" about Rooky himself. Both kept short and fun.
+    if random.choice(["real", "rooky"]) == "real":
+        prompt = (
+            "Tell me one genuinely true, fun fact about real raccoons. Keep it "
+            "short, surprising, and playful."
+        )
+    else:
+        prompt = (
+            "You are Rooky the Raccoon. Share one playful, made-up 'fun fact' "
+            "about YOURSELF — your raccoon life, quirks, or personality. Keep "
+            "it short, silly, and in-character; it's just for fun, not a real "
+            "fact."
+        )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
 
 
 @bot.message_handler(commands=["explain"], func=is_allowed)
