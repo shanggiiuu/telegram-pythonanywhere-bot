@@ -66,6 +66,7 @@ def cmd_help(message):
         "/quote — something to cheer mah pookie up!!>:3",
         "/fact — random fun fact that will be stuck in your head",
         "/compliment — slay the day diva💅",
+        "/recipe — whatcha cookin today chef? I gotchu 🍳",
         "/roll — ROLL THE DICE! 🎲",
         "/roast — imma cook :p",
         "/remember — got it inside the walnut😎",
@@ -125,6 +126,33 @@ def cmd_compliment(message):
       with keep_typing(message.chat.id):
           reply = ask_ai(message.from_user.id, "Give me a warm, wholesome, encouraging compliment to brighten my day.")
       send_reply(message, reply)
+
+
+@bot.message_handler(commands=["recipe"], func=is_allowed)
+def cmd_recipe(message):
+    # Tailored for someone who cooks for the family every day: keep it to
+    # simple, everyday food with common ingredients. Rotate a random vibe so
+    # daily calls don't keep serving up the same dish.
+    vibe = random.choice(
+        [
+            "a quick breakfast",
+            "a cozy one-pot meal",
+            "a budget-friendly family dinner",
+            "a 15-minute lunch",
+            "a simple rice dish",
+            "a comforting soup or stew",
+            "an easy noodle or pasta dish",
+            "a filling snack anyone can make",
+        ]
+    )
+    prompt = (
+        f"Suggest ONE simple everyday recipe: {vibe}. Give it a fun name, a "
+        "short list of common ingredients, and 3-6 easy numbered steps. Keep "
+        "it beginner-friendly and quick to cook."
+    )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
 
 
 @bot.message_handler(commands=["roll"], func=is_allowed)

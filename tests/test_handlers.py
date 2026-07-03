@@ -145,6 +145,7 @@ def test_cmd_help_lists_commands():
         assert "/start" in sent
         assert "/reset" in sent
         assert "/roast" in sent
+        assert "/recipe" in sent
         assert "/model" not in sent
 
 
@@ -245,6 +246,26 @@ def test_cmd_compliment_uses_keep_typing_and_send_reply():
         cmd_compliment(msg)
         mock_keep.assert_called_once_with(456)
         mock_send.assert_called_once_with(msg, "You're doing great!")
+
+
+def test_cmd_recipe_uses_keep_typing_and_send_reply():
+    with (
+        patch("bot.handlers.ask_ai", return_value="🍳 Sunny Egg Toast: ...") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_recipe
+
+        msg = make_message(text="/recipe")
+        cmd_recipe(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        mock_ask.assert_called_once()
+        assert mock_ask.call_args[0][0] == 123  # user_id
+        assert "recipe" in mock_ask.call_args[0][1].lower()  # prompt asks for a recipe
+        mock_send.assert_called_once_with(msg, "🍳 Sunny Egg Toast: ...")
 
 
 # ── /roll ─────────────────────────────────────────────────────────────────────
