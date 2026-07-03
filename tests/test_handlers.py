@@ -146,6 +146,7 @@ def test_cmd_help_lists_commands():
         assert "/reset" in sent
         assert "/roast" in sent
         assert "/recipe" in sent
+        assert "/explain" in sent
         assert "/model" not in sent
 
 
@@ -266,6 +267,46 @@ def test_cmd_recipe_uses_keep_typing_and_send_reply():
         assert mock_ask.call_args[0][0] == 123  # user_id
         assert "recipe" in mock_ask.call_args[0][1].lower()  # prompt asks for a recipe
         mock_send.assert_called_once_with(msg, "🍳 Sunny Egg Toast: ...")
+
+
+# ── /explain ──────────────────────────────────────────────────────────────────
+
+
+def test_cmd_explain_with_topic_uses_keep_typing_and_send_reply():
+    """'/explain <topic>' threads the topic into an ELI5 prompt and replies."""
+    with (
+        patch("bot.handlers.ask_ai", return_value="It's like a recipe!") as mock_ask,
+        patch("bot.handlers.send_reply") as mock_send,
+        patch("bot.handlers.keep_typing") as mock_keep,
+        patch("bot.handlers.bot"),
+    ):
+        mock_keep.return_value.__enter__ = MagicMock(return_value=None)
+        mock_keep.return_value.__exit__ = MagicMock(return_value=None)
+        from bot.handlers import cmd_explain
+
+        msg = make_message(text="/explain what is a for loop")
+        cmd_explain(msg)
+        mock_keep.assert_called_once_with(456)  # chat_id
+        mock_ask.assert_called_once()
+        assert mock_ask.call_args[0][0] == 123  # user_id
+        prompt = mock_ask.call_args[0][1]
+        assert "what is a for loop" in prompt  # user's topic threaded in
+        assert "5 years old" in prompt  # ELI5 framing
+        mock_send.assert_called_once_with(msg, "It's like a recipe!")
+
+
+def test_cmd_explain_without_topic_shows_usage_hint():
+    """Bare '/explain' must NOT call the AI (it can't see code it wasn't given);
+    it shows a usage hint instead."""
+    with (
+        patch("bot.handlers.ask_ai") as mock_ask,
+        patch("bot.handlers.bot") as mock_bot,
+    ):
+        from bot.handlers import cmd_explain
+
+        cmd_explain(make_message(text="/explain"))
+        mock_ask.assert_not_called()
+        assert "/explain" in mock_bot.send_message.call_args[0][1]
 
 
 # ── /roll ─────────────────────────────────────────────────────────────────────

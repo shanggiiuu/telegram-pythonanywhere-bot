@@ -62,6 +62,7 @@ def cmd_help(message):
         "/reset — wipes our convo history, fresh start, clean slate, magic✨ ",
         "/about — peek under my hood (which AI model, storage, hosting, version) ;3",
         "/sha — which lil version of me is alive rn (git commit) 🤓",
+        "/explain — paste code or a word, I break it down like ur 5 🧠",
         "/joke  — I tell you a unhinged funny joke👍 ",
         "/quote — something to cheer mah pookie up!!>:3",
         "/fact — random fun fact that will be stuck in your head",
@@ -126,6 +127,29 @@ def cmd_compliment(message):
       with keep_typing(message.chat.id):
           reply = ask_ai(message.from_user.id, "Give me a warm, wholesome, encouraging compliment to brighten my day.")
       send_reply(message, reply)
+
+
+@bot.message_handler(commands=["explain"], func=is_allowed)
+def cmd_explain(message):
+    # Split on any whitespace (maxsplit=1) so pasted code with newlines still
+    # counts as the topic — users often do "/explain\n<code block>".
+    parts = (message.text or "").split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if not topic:
+        bot.send_message(
+            message.chat.id,
+            "Gimme somethin to explain gurl!:3 paste some code or drop a word — "
+            "like: /explain what is a for loop",
+        )
+        return
+    prompt = (
+        "Explain this like I'm 5 years old: super simple words, one fun "
+        "everyday analogy, and keep it short. If it's code, say what it does "
+        f"and walk through it step by step:\n\n{topic}"
+    )
+    with keep_typing(message.chat.id):
+        reply = ask_ai(message.from_user.id, prompt)
+    send_reply(message, reply)
 
 
 @bot.message_handler(commands=["recipe"], func=is_allowed)
