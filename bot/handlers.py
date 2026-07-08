@@ -57,30 +57,45 @@ def cmd_start(message):
 @bot.message_handler(commands=["help"], func=is_allowed)
 def cmd_help(message):
     lines = [
+        "heyyy pookie!! here's everythin i can do, sorted into lil groups :3",
+        "",
+        "🦝 Basics",
         "/start — I say heyyy and we get going",
-        "/help  — shows this lil menu of commands:D",
-        "/reset — wipes our convo history, fresh start, clean slate, magic✨ ",
+        "/help — shows this lil menu of commands:D",
+        "/reset — wipes our convo history, fresh start, clean slate, magic✨",
         "/about — peek under my hood (which AI model, storage, hosting, version) ;3",
         "/sha — which lil version of me is alive rn (git commit) 🤓",
+        "",
+        "🧠 Learn & Code",
         "/explain — paste code or a word, I break it down like ur 5 🤏",
         "/debug — paste ur broken code + error, I sniff out the bug 🐛",
-        "/joke  — I tell you a unhinged funny joke👍 ",
+        "/knowledge — random smart nugget to flex ur brain 🧠",
+        "/devfact — spicy lil programming fun fact 👩‍💻🔥",
+        "",
+        "🎉 Fun",
+        "/joke — I tell you a unhinged funny joke👍",
         "/quote — something to cheer mah pookie up!!>:3",
         "/compliment — slay the day diva💅",
         "/raccoonfacts — fun facts bout raccoons n lil secrets bout me 🦝",
-        "/recipe — whatcha cookin today chef? I gotchu 🍳",
-        "/knowledge — random smart nugget to flex ur brain 🧠",
-        "/devfact — spicy lil programming fun fact 👩‍💻🔥",
-        "/finance — future-you money tips 💰 (or ask me a money Q)",
-        "/uni — uni planning help, we plottin ur glowup 🎓",
         "/roll — ROLL THE DICE! 🎲",
         "/roast — imma cook :p",
+        "",
+        "🌱 Life & Planning",
+        "/recipe — whatcha cookin today chef? I gotchu 🍳",
+        "/finance — future-you money tips 💰 (or ask me a money Q)",
+        "/uni — uni planning help, we plottin ur glowup 🎓",
+        "",
+        "😎 My Walnut (memory)",
         "/remember — got it inside the walnut😎",
         "/recall — I dig it back outta the walnut:3",
         "/forget — it ran away from my brain",
     ]
     if HF_SPACE_ID:
-        lines.append("/model — switch AI provider")
+        lines += [
+            "",
+            "⚙️ Settings",
+            "/model — switch AI provider",
+        ]
     bot.send_message(message.chat.id, "\n".join(lines))
 
 
