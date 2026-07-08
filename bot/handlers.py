@@ -55,16 +55,51 @@ def cmd_start(message):
 
 @bot.message_handler(commands=["help"], func=is_allowed)
 def cmd_help(message):
-    lines = [
-        "/start — welcome message",
-        "/help  — show this message",
-        "/reset — clear conversation history",
-        "/about — about this bot",
-        "/sha   — show the live git commit SHA",
+    # Commands are grouped by purpose so the list stays readable as it
+    # grows. Each group is (heading, [lines]) — a line can be a bare
+    # command or a usage variant (e.g. "/model hf"). A group with no
+    # lines is skipped, so the AI group disappears when HF is unset.
+    title = "🤖 Bot commands"
+    groups = [
+        (
+            "Basics",
+            [
+                "/start — welcome message",
+                "/help — this message",
+            ],
+        ),
+        (
+            "Conversation",
+            [
+                "/reset — clear conversation history",
+            ],
+        ),
+        (
+            "AI",
+            [
+                "/model — show current AI provider",
+                "/model main — Cerebras (fast, multilingual, remembers)",
+                "/model hf — ArmGPT (Armenian only, slow, no memory)",
+            ]
+            if HF_SPACE_ID
+            else [],
+        ),
+        (
+            "About",
+            [
+                "/about — model, storage & hosting info",
+                "/sha — live git commit SHA",
+            ],
+        ),
     ]
-    if HF_SPACE_ID:
-        lines.append("/model — switch AI provider")
-    bot.send_message(message.chat.id, "\n".join(lines))
+
+    sections = [title]
+    for heading, lines in groups:
+        if not lines:
+            continue
+        sections.append(heading + "\n" + "\n".join(lines))
+
+    bot.send_message(message.chat.id, "\n\n".join(sections))
 
 
 @bot.message_handler(commands=["reset"], func=is_allowed)
